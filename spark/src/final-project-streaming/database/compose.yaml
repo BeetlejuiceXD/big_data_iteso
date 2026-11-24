@@ -1,0 +1,37 @@
+name: trama-postgres-fresh
+
+# Optional database for a NEW installation only. The existing postgres-iteso
+# container and its volumes are not managed by this Compose project.
+services:
+  postgres:
+    profiles: [fresh-install]
+    image: postgres:18.6
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in database/.env}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in database/.env}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    volumes:
+      - trama_pg18_data:/var/lib/postgresql
+      - ./init/10-create-project.sh:/docker-entrypoint-initdb.d/10-create-project.sh:ro
+      - ./schema.sql:/opt/trama/schema.sql:ro
+    networks:
+      spark_cluster:
+        # consumer.py has this fixed hostname. Use this Compose profile only
+        # when no existing postgres-iteso is attached to the network.
+        aliases: [postgres-iteso]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U postgres -d streaming_project"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  trama_pg18_data:
+
+networks:
+  spark_cluster:
+    external: true
+    name: spark-cluster_default

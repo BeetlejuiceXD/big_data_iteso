@@ -1,0 +1,24 @@
+# Spark Streaming
+checkpoints/
+checkpoints-final-*/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.pyc
+
+# Credenciales
+.env
+.env.*
+
+# Frontend React / Vite
+node_modules/
+.vite-cache/
+dist/
+coverage/
+
+# Permitir plantilla de configuración sin secretos
+!.env.example
+!.env.final.example

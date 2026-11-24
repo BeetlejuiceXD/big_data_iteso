@@ -1,0 +1,21 @@
+name: trama-jdbc-isolated
+
+# Standalone test database: no published port, no shared network, no persistent
+# volume. The tmpfs is discarded with this test container only.
+services:
+  db:
+    image: postgres:18.6
+    environment:
+      POSTGRES_USER: jdbc_test_user
+      POSTGRES_PASSWORD: ${JDBC_TEST_PASSWORD:?Set a disposable JDBC_TEST_PASSWORD}
+      POSTGRES_DB: trama_jdbc_test
+    tmpfs:
+      - /var/lib/postgresql
+    volumes:
+      - ../database/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql:ro
+      - ../database/jdbc_staging.sql:/docker-entrypoint-initdb.d/20-jdbc-staging.sql:ro
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U jdbc_test_user -d trama_jdbc_test"]
+      interval: 2s
+      timeout: 2s
+      retries: 30

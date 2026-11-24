@@ -1,0 +1,35 @@
+name: trama-commerce-final-db
+
+# Separate PostgreSQL 18.6 instance for the final demo. Do not run this file
+# until the shared-network cutover has been approved and offsets captured.
+services:
+  postgres:
+    image: postgres:18.6
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a NEW admin password}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Set a NEW application password}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    volumes:
+      - trama_final_pg18_data:/var/lib/postgresql
+      - ./init/20-create-final.sh:/docker-entrypoint-initdb.d/20-create-final.sh:ro
+      - ./schema.sql:/opt/trama/schema.sql:ro
+      - ./jdbc_staging.sql:/opt/trama/jdbc_staging.sql:ro
+    networks:
+      spark_cluster:
+        aliases: [trama-postgres-final]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U trama_final_user -d trama_commerce_final"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  trama_final_pg18_data:
+
+networks:
+  spark_cluster:
+    external: true
+    name: spark-cluster_default
